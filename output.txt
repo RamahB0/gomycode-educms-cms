@@ -1,0 +1,39 @@
+
+=== 0. Connectivity: real PostgreSQL + real Redis ===
+Connected to PostgreSQL. Server time: 2026-08-16T16:50:24.942Z
+Connected to Redis. Cache set/get round-trips correctly.
+
+=== 1. Import-chain smoke test ===
+All models, middleware and routes imported without error.
+
+=== 2. Boot the real Express app on an ephemeral port ===
+Listening on 127.0.0.1:41295
+GET /api/health -> 200 { status: "ok" }
+
+=== 3. Auth: register + login against real PostgreSQL (bcrypt + JWT) ===
+Registered a subscriber; password was hashed with bcrypt (not stored in plaintext).
+Login correctly rejects wrong passwords and accepts the right one.
+
+=== 4. Role-based access control (RBAC): subscriber vs author vs editor vs admin ===
+Subscriber blocked from POST /api/posts with 403, as required by the role hierarchy.
+Author correctly blocked (403) from category management; editor correctly allowed (201).
+
+=== 5. Posts: create as author (auto-pending), publish as editor, public read, view-count increments ===
+Author-authored post correctly downgraded from "published" to "pending" (server-enforced, not client-trusted).
+Editor successfully published the pending post.
+Published post publicly readable; view_count incremented across reads (0 -> 1).
+
+=== 6. Comments: subscriber comment requires moderation, editor comment auto-approves ===
+Subscriber comment pending, editor comment auto-approved, public list shows only approved comments.
+
+=== 7. Activity log: administrative + content actions are audited ===
+activity_log recorded 2 entries for this post: create, update
+
+=== 8. Caching: repeated public listing is served from Redis when available ===
+Published-posts listing served consistently across two requests (second request hits the Redis cache).
+
+=== Cleanup ===
+Demo rows removed, DB pool closed, Redis connection closed.
+
+=== Done ===
+All checks passed against a real PostgreSQL database and a real Redis cache.
